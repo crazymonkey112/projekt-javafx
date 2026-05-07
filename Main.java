@@ -62,6 +62,13 @@ public class Main extends Application {
         workspace = new Pane();
         workspace.setStyle("-fx-background-color: #FFFFFF; -fx-border-color: #CCCCCC; -fx-border-width: 2px;");
 
+        EditorController controller = new EditorController(workspace);
+
+        // Podpinamy akcje pod menu
+        itemOkrag.setOnAction(e -> controller.setTool(EditorController.Tool.CIRCLE));
+        itemProstokat.setOnAction(e -> controller.setTool(EditorController.Tool.RECTANGLE));
+        itemWielokat.setOnAction(e -> controller.setTool(EditorController.Tool.POLYGON));
+
         // Składanie głównego okna
         BorderPane borderPane = new BorderPane();
         borderPane.setTop(topContainer);  
