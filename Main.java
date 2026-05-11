@@ -61,6 +61,10 @@ public class Main extends Application {
         // Obszar roboczy
         workspace = new Pane();
         workspace.setStyle("-fx-background-color: #FFFFFF; -fx-border-color: #CCCCCC; -fx-border-width: 2px;");
+        javafx.scene.shape.Rectangle clip = new javafx.scene.shape.Rectangle();
+        clip.widthProperty().bind(workspace.widthProperty());
+        clip.heightProperty().bind(workspace.heightProperty());
+        workspace.setClip(clip);
 
         EditorController controller = new EditorController(workspace);
 
