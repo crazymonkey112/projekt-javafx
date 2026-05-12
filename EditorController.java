@@ -1,44 +1,63 @@
+import java.util.ArrayList;
+import java.util.List;
+import javafx.scene.Node;
+import javafx.scene.control.ColorPicker;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.CustomMenuItem;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
-import java.util.ArrayList;
-import java.util.List;
-import javafx.scene.control.ColorPicker;
-import javafx.scene.control.ContextMenu;
-import javafx.scene.control.CustomMenuItem;
-import javafx.scene.input.MouseButton;
 
+//  Kontroler odpowiadający za logikę rysowania, modyfikacji i zarządzania figurami na obszarze roboczym.
 public class EditorController {
 
+    // Komponenty interfejsu
     private Pane workspace;
-    public enum Tool { CIRCLE, RECTANGLE, POLYGON }
-    private Tool currentTool = Tool.RECTANGLE;
-    private double startX, startY;
-    private Shape currentShape;
-    private Shape activeShape = null;
-    private double dragDeltaX, dragDeltaY;
     private ContextMenu contextMenu;
     private ColorPicker colorPicker;
 
+    // Narzędzia i stan edytora
+    public enum Tool { CIRCLE, RECTANGLE, POLYGON }
+    private Tool currentTool = Tool.RECTANGLE;
+    
+    // Zmienne pomocnicze do rysowania i transformacji
+    private double startX, startY;
+    private double dragDeltaX, dragDeltaY;
+    private Shape currentShape;
+    private Shape activeShape = null;
+
+    public EditorController(Pane workspace) {
+        this.workspace = workspace;
+        setupMouseEvents();
+        setupContextMenu();
+    }
+
+    public void setTool(Tool tool) {
+        this.currentTool = tool;
+    }
+
+    // Zapis danych - Konwertuje obiekty JavaFX na płótnie do formatu DTO (Data Transfer Object) w celu umożliwienia ich serializacji.
     public List<ShapeData> getShapesAsData() {
         List<ShapeData> list = new ArrayList<>();
         
-        for (javafx.scene.Node node : workspace.getChildren()) {
+        for (Node node : workspace.getChildren()) {
             if (node instanceof Shape) {
                 Shape shape = (Shape) node;
                 ShapeData data = new ShapeData();
                 
+                // Zapis transformacji i właściwości bazowych
                 data.translateX = shape.getTranslateX();
                 data.translateY = shape.getTranslateY();
                 data.scaleX = shape.getScaleX();
                 data.scaleY = shape.getScaleY();
                 data.rotate = shape.getRotate();
-                
                 data.hexColor = ((Color) shape.getFill()).toString();
 
+                // Zapis właściwości specyficznych dla danego typu figury
                 if (shape instanceof Rectangle) {
                     data.type = ShapeData.ShapeType.RECTANGLE;
                     Rectangle r = (Rectangle) shape;
@@ -63,6 +82,7 @@ public class EditorController {
         return list;
     }
 
+    // Odczyt danych - Czyści obecne płótno i odtwarza figury na podstawie wczytanych danych DTO.
     public void loadShapesFromData(List<ShapeData> dataList) {
         workspace.getChildren().clear(); 
         setActiveShape(null);
@@ -70,6 +90,7 @@ public class EditorController {
         for (ShapeData data : dataList) {
             Shape shape = null;
             
+            // Rekonstrukcja geometrii
             if (data.type == ShapeData.ShapeType.RECTANGLE) {
                 shape = new Rectangle(data.x, data.y, data.width, data.height);
             } else if (data.type == ShapeData.ShapeType.CIRCLE) {
@@ -81,6 +102,7 @@ public class EditorController {
             }
             
             if (shape != null) {
+                // Aplikacja zapisanych transformacji i kolorów
                 shape.setTranslateX(data.translateX);
                 shape.setTranslateY(data.translateY);
                 shape.setScaleX(data.scaleX);
@@ -94,10 +116,12 @@ public class EditorController {
         }
     }
 
+    // Konfiguruje menu kontekstowe oraz narzędzie ColorPicker dla aktywnych figur.
     private void setupContextMenu() {
         contextMenu = new ContextMenu();
         colorPicker = new ColorPicker();
 
+        // Akcja zmiany koloru dla aktywnej figury
         colorPicker.setOnAction(event -> {
             if (activeShape != null) {
                 activeShape.setFill(colorPicker.getValue());
@@ -106,10 +130,10 @@ public class EditorController {
 
         CustomMenuItem colorItem = new CustomMenuItem(colorPicker);
         colorItem.setHideOnClick(false); 
-        
         contextMenu.getItems().add(colorItem);
     }
 
+    // Rejestruje wskazaną figurę jako aktywną i nakłada na nią wizualne obramowanie.
     private void setActiveShape(Shape shape) {
         if (activeShape != null) {
             activeShape.setStroke(null);
@@ -124,23 +148,25 @@ public class EditorController {
         }
     }
 
+    // Dodaje event listnery umożliwiające aktywowanie, przesuwanie, skalowanie, obracanie figury oraz pozwala na wywołanie menu kontekstowego
     private void makeShapeInteractive(Shape shape) {
         shape.setOnMousePressed(event -> {
             setActiveShape(shape);
             event.consume();
 
             if (event.getButton() == MouseButton.SECONDARY) {
-                
+                // Wywołanie menu kontekstowego
                 colorPicker.setValue((Color) shape.getFill());
                 contextMenu.show(shape, event.getScreenX(), event.getScreenY());
-                
             } else if (event.getButton() == MouseButton.PRIMARY) {
+                // Rozpoczęcie przesuwania figury
                 contextMenu.hide();
                 dragDeltaX = shape.getTranslateX() - event.getSceneX();
                 dragDeltaY = shape.getTranslateY() - event.getSceneY();
             }
         });
 
+        // Obsługa przesuwania figury
         shape.setOnMouseDragged(event -> {
             if (!event.isPrimaryButtonDown()) return;
 
@@ -148,18 +174,18 @@ public class EditorController {
             shape.setTranslateY(event.getSceneY() + dragDeltaY);
             event.consume();
         });
+
+        // Obsługa skalowania (Scroll) i obracania (Ctrl + Scroll)
         shape.setOnScroll(event -> {
             if (activeShape != shape) return;
 
             double delta = event.getDeltaY();
-
             if (delta == 0.0) return;
 
             if (event.isControlDown()) {
                 double currentAngle = shape.getRotate();
                 double angleDelta = (delta > 0) ? 10 : -10;
                 shape.setRotate(currentAngle + angleDelta);
-                
             } else {
                 double currentScaleX = shape.getScaleX();
                 double currentScaleY = shape.getScaleY();
@@ -168,23 +194,13 @@ public class EditorController {
                 shape.setScaleX(currentScaleX * scaleFactor);
                 shape.setScaleY(currentScaleY * scaleFactor);
             }
-
             event.consume();
         });
     }
 
-    public EditorController(Pane workspace) {
-        this.workspace = workspace;
-        setupMouseEvents();
-        setupContextMenu();
-    }
-
-    public void setTool(Tool tool) {
-        this.currentTool = tool;
-    }
-
+    // Konfiguruje główne listenery obszaru roboczego, odpowiadające za inicjowanie i rysowanie figur
     private void setupMouseEvents() {
-        
+        // Zdarzenie kliknięcia - punkt początkowy rysowania
         workspace.setOnMousePressed(event -> {
             if (event.getButton() != MouseButton.PRIMARY) return;
 
@@ -197,14 +213,12 @@ public class EditorController {
                 currentShape = rect;
                 makeShapeInteractive(rect);
                 workspace.getChildren().add(rect);
-                
             } else if (currentTool == Tool.CIRCLE) {
                 Circle circle = new Circle(startX, startY, 0);
                 circle.setFill(Color.TOMATO); 
                 currentShape = circle;
                 makeShapeInteractive(circle);
                 workspace.getChildren().add(circle);
-                
             } else if (currentTool == Tool.POLYGON) {
                 Polygon polygon = new Polygon();
                 polygon.setFill(Color.MEDIUMSEAGREEN);
@@ -214,6 +228,7 @@ public class EditorController {
             }
         });
 
+        // Zdarzenie przeciągania - dynamiczne dopasowywanie wymiarów figury
         workspace.setOnMouseDragged(event -> {
             if (!event.isPrimaryButtonDown()) return;
 
@@ -222,27 +237,25 @@ public class EditorController {
 
             if (currentTool == Tool.RECTANGLE && currentShape instanceof Rectangle) {
                 Rectangle rect = (Rectangle) currentShape;
+                // Matematyczne zabezpieczenie przed ujemnymi wymiarami
                 rect.setX(Math.min(startX, currentX));
                 rect.setY(Math.min(startY, currentY));
                 rect.setWidth(Math.abs(currentX - startX));
                 rect.setHeight(Math.abs(currentY - startY));
-                
             } else if (currentTool == Tool.CIRCLE && currentShape instanceof Circle) {
                 Circle circle = (Circle) currentShape;
-                
+                // Obliczanie promienia na podstawie twierdzenia Pitagorasa
                 double radius = Math.sqrt(Math.pow(currentX - startX, 2) + Math.pow(currentY - startY, 2));
                 circle.setRadius(radius);
-                
             } else if (currentTool == Tool.POLYGON && currentShape instanceof Polygon) {
                 Polygon polygon = (Polygon) currentShape;
-                
+                // Generowanie trójkąta na podstawie wirtualnej obwiedni (bounding box)
                 double minX = Math.min(startX, currentX);
                 double maxX = Math.max(startX, currentX);
                 double minY = Math.min(startY, currentY);
                 double maxY = Math.max(startY, currentY);
 
                 polygon.getPoints().clear();
-
                 polygon.getPoints().addAll(
                     (minX + maxX) / 2, minY, 
                     minX, maxY,           
