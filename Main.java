@@ -1,3 +1,4 @@
+import java.util.List;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -72,6 +73,36 @@ public class Main extends Application {
         itemOkrag.setOnAction(e -> controller.setTool(EditorController.Tool.CIRCLE));
         itemProstokat.setOnAction(e -> controller.setTool(EditorController.Tool.RECTANGLE));
         itemWielokat.setOnAction(e -> controller.setTool(EditorController.Tool.POLYGON));
+
+        // Konfiguracja okienka dialogowego do obsługi plików
+        javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
+        fileChooser.getExtensionFilters().add(new javafx.stage.FileChooser.ExtensionFilter("Pliki Edytora Graficznego", "*.edy"));
+
+        // Akcja zapis
+        itemZapisz.setOnAction(e -> {
+            java.io.File file = fileChooser.showSaveDialog(primaryStage);
+            if (file != null) {
+                try {
+                    FileManager.saveToFile(controller.getShapesAsData(), file);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
+
+        // Akcja odczyt
+        itemWczytaj.setOnAction(e -> {
+            java.io.File file = fileChooser.showOpenDialog(primaryStage);
+            if (file != null) {
+                try {
+                    List<ShapeData> data = FileManager.loadFromFile(file);
+                    controller.loadShapesFromData(data);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
+
 
         // Składanie głównego okna
         BorderPane borderPane = new BorderPane();

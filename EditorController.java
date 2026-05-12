@@ -3,7 +3,9 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.shape.Shape; 
+import javafx.scene.shape.Shape;
+import java.util.ArrayList;
+import java.util.List;
 import javafx.scene.control.ColorPicker;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.CustomMenuItem;
@@ -20,6 +22,77 @@ public class EditorController {
     private double dragDeltaX, dragDeltaY;
     private ContextMenu contextMenu;
     private ColorPicker colorPicker;
+
+    public List<ShapeData> getShapesAsData() {
+        List<ShapeData> list = new ArrayList<>();
+        
+        for (javafx.scene.Node node : workspace.getChildren()) {
+            if (node instanceof Shape) {
+                Shape shape = (Shape) node;
+                ShapeData data = new ShapeData();
+                
+                data.translateX = shape.getTranslateX();
+                data.translateY = shape.getTranslateY();
+                data.scaleX = shape.getScaleX();
+                data.scaleY = shape.getScaleY();
+                data.rotate = shape.getRotate();
+                
+                data.hexColor = ((Color) shape.getFill()).toString();
+
+                if (shape instanceof Rectangle) {
+                    data.type = ShapeData.ShapeType.RECTANGLE;
+                    Rectangle r = (Rectangle) shape;
+                    data.x = r.getX();
+                    data.y = r.getY();
+                    data.width = r.getWidth();
+                    data.height = r.getHeight();
+                } else if (shape instanceof Circle) {
+                    data.type = ShapeData.ShapeType.CIRCLE;
+                    Circle c = (Circle) shape;
+                    data.centerX = c.getCenterX();
+                    data.centerY = c.getCenterY();
+                    data.radius = c.getRadius();
+                } else if (shape instanceof Polygon) {
+                    data.type = ShapeData.ShapeType.POLYGON;
+                    Polygon p = (Polygon) shape;
+                    data.points = new ArrayList<>(p.getPoints());
+                }
+                list.add(data);
+            }
+        }
+        return list;
+    }
+
+    public void loadShapesFromData(List<ShapeData> dataList) {
+        workspace.getChildren().clear(); 
+        setActiveShape(null);
+        
+        for (ShapeData data : dataList) {
+            Shape shape = null;
+            
+            if (data.type == ShapeData.ShapeType.RECTANGLE) {
+                shape = new Rectangle(data.x, data.y, data.width, data.height);
+            } else if (data.type == ShapeData.ShapeType.CIRCLE) {
+                shape = new Circle(data.centerX, data.centerY, data.radius);
+            } else if (data.type == ShapeData.ShapeType.POLYGON) {
+                Polygon p = new Polygon();
+                p.getPoints().addAll(data.points);
+                shape = p;
+            }
+            
+            if (shape != null) {
+                shape.setTranslateX(data.translateX);
+                shape.setTranslateY(data.translateY);
+                shape.setScaleX(data.scaleX);
+                shape.setScaleY(data.scaleY);
+                shape.setRotate(data.rotate);
+                shape.setFill(Color.valueOf(data.hexColor));
+
+                makeShapeInteractive(shape); 
+                workspace.getChildren().add(shape);
+            }
+        }
+    }
 
     private void setupContextMenu() {
         contextMenu = new ContextMenu();
@@ -70,7 +143,7 @@ public class EditorController {
 
         shape.setOnMouseDragged(event -> {
             if (!event.isPrimaryButtonDown()) return;
-            
+
             shape.setTranslateX(event.getSceneX() + dragDeltaX);
             shape.setTranslateY(event.getSceneY() + dragDeltaY);
             event.consume();
