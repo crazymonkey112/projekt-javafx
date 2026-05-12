@@ -4,6 +4,10 @@ import javafx.scene.shape.Circle;
 import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape; 
+import javafx.scene.control.ColorPicker;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.CustomMenuItem;
+import javafx.scene.input.MouseButton;
 
 public class EditorController {
 
@@ -14,6 +18,24 @@ public class EditorController {
     private Shape currentShape;
     private Shape activeShape = null;
     private double dragDeltaX, dragDeltaY;
+    private ContextMenu contextMenu;
+    private ColorPicker colorPicker;
+
+    private void setupContextMenu() {
+        contextMenu = new ContextMenu();
+        colorPicker = new ColorPicker();
+
+        colorPicker.setOnAction(event -> {
+            if (activeShape != null) {
+                activeShape.setFill(colorPicker.getValue());
+            }
+        });
+
+        CustomMenuItem colorItem = new CustomMenuItem(colorPicker);
+        colorItem.setHideOnClick(false); 
+        
+        contextMenu.getItems().add(colorItem);
+    }
 
     private void setActiveShape(Shape shape) {
         if (activeShape != null) {
@@ -32,9 +54,18 @@ public class EditorController {
     private void makeShapeInteractive(Shape shape) {
         shape.setOnMousePressed(event -> {
             setActiveShape(shape);
-            dragDeltaX = shape.getTranslateX() - event.getSceneX();
-            dragDeltaY = shape.getTranslateY() - event.getSceneY();
             event.consume();
+
+            if (event.getButton() == MouseButton.SECONDARY) {
+                
+                colorPicker.setValue((Color) shape.getFill());
+                contextMenu.show(shape, event.getScreenX(), event.getScreenY());
+                
+            } else if (event.getButton() == MouseButton.PRIMARY) {
+                contextMenu.hide();
+                dragDeltaX = shape.getTranslateX() - event.getSceneX();
+                dragDeltaY = shape.getTranslateY() - event.getSceneY();
+            }
         });
 
         shape.setOnMouseDragged(event -> {
@@ -70,6 +101,7 @@ public class EditorController {
     public EditorController(Pane workspace) {
         this.workspace = workspace;
         setupMouseEvents();
+        setupContextMenu();
     }
 
     public void setTool(Tool tool) {
