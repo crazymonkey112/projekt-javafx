@@ -69,6 +69,8 @@ public class EditorController {
         });
 
         shape.setOnMouseDragged(event -> {
+            if (!event.isPrimaryButtonDown()) return;
+            
             shape.setTranslateX(event.getSceneX() + dragDeltaX);
             shape.setTranslateY(event.getSceneY() + dragDeltaY);
             event.consume();
@@ -111,6 +113,8 @@ public class EditorController {
     private void setupMouseEvents() {
         
         workspace.setOnMousePressed(event -> {
+            if (event.getButton() != MouseButton.PRIMARY) return;
+
             startX = event.getX();
             startY = event.getY();
 
@@ -138,6 +142,8 @@ public class EditorController {
         });
 
         workspace.setOnMouseDragged(event -> {
+            if (!event.isPrimaryButtonDown()) return;
+
             double currentX = event.getX();
             double currentY = event.getY();
 
