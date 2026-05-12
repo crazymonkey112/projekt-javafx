@@ -1,15 +1,10 @@
 import java.util.List;
 import javafx.application.Application;
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*; 
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane; 
-import javafx.scene.layout.VBox; 
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 
 public class Main extends Application {
@@ -22,7 +17,7 @@ public class Main extends Application {
     @Override
     public void start(Stage primaryStage) throws Exception {
         
-        // Stworzenie menubara i dodanie do niego opcji
+        // 1. TWORZENIE PASKA MENU (MenuBar)
         MenuBar menuBar = new MenuBar();
         
         Menu menuPlik = new Menu("Plik");
@@ -38,28 +33,16 @@ public class Main extends Application {
 
         Menu menuPomoc = new Menu("Pomoc");
         MenuItem itemInstrukcja = new MenuItem("Instrukcja użytkownika");
-        menuPomoc.getItems().add(itemInstrukcja);
+        MenuItem itemInfo = new MenuItem("Informacje o programie"); // Dodany przycisk Info
+        menuPomoc.getItems().addAll(itemInstrukcja, itemInfo);
 
+        // Podpięcie akcji do menu Pomoc
+        itemInstrukcja.setOnAction(e -> showHelpDialog());
+        itemInfo.setOnAction(e -> showInfoDialog());
+        
         menuBar.getMenus().addAll(menuPlik, menuFigury, menuPomoc);
 
-        // Panel górny z przyciskiem info
-        HBox topPanel = new HBox(10);
-        topPanel.setAlignment(Pos.CENTER_LEFT);
-        topPanel.setPadding(new Insets(10));
-        topPanel.setStyle("-fx-background-color: #F0F8FF;");
-
-        Button infoButton = new Button("Info");
-        infoButton.setFont(Font.font("SansSerif", FontWeight.BOLD, 14));
-        infoButton.setStyle("-fx-background-color: #2E8B57; -fx-text-fill: white;");
-
-        infoButton.setOnAction(event -> showInfoDialog());
-
-        topPanel.getChildren().addAll(infoButton);
-
-        // Grupujemy menuBar i topPanel w jeden pionowy układ (VBox), aby obydwa elementy zmieściły się na górze okna
-        VBox topContainer = new VBox(menuBar, topPanel);
-
-        // Obszar roboczy
+        // 2. OBSZAR ROBOCZY (Pane) z maską przycinającą
         workspace = new Pane();
         workspace.setStyle("-fx-background-color: #FFFFFF; -fx-border-color: #CCCCCC; -fx-border-width: 2px;");
         javafx.scene.shape.Rectangle clip = new javafx.scene.shape.Rectangle();
@@ -67,18 +50,18 @@ public class Main extends Application {
         clip.heightProperty().bind(workspace.heightProperty());
         workspace.setClip(clip);
 
+        // 3. TWORZENIE KONTROLERA
         EditorController controller = new EditorController(workspace);
 
-        // Podpinamy akcje pod menu
+        // Podpinamy akcje pod menu figur
         itemOkrag.setOnAction(e -> controller.setTool(EditorController.Tool.CIRCLE));
         itemProstokat.setOnAction(e -> controller.setTool(EditorController.Tool.RECTANGLE));
         itemWielokat.setOnAction(e -> controller.setTool(EditorController.Tool.POLYGON));
 
-        // Konfiguracja okienka dialogowego do obsługi plików
+        // 4. OBSŁUGA ZAPISU I ODCZYTU (FileChooser)
         javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
         fileChooser.getExtensionFilters().add(new javafx.stage.FileChooser.ExtensionFilter("Pliki Edytora Graficznego", "*.edy"));
 
-        // Akcja zapis
         itemZapisz.setOnAction(e -> {
             java.io.File file = fileChooser.showSaveDialog(primaryStage);
             if (file != null) {
@@ -90,7 +73,6 @@ public class Main extends Application {
             }
         });
 
-        // Akcja odczyt
         itemWczytaj.setOnAction(e -> {
             java.io.File file = fileChooser.showOpenDialog(primaryStage);
             if (file != null) {
@@ -103,10 +85,9 @@ public class Main extends Application {
             }
         });
 
-
-        // Składanie głównego okna
+        // 5. SKŁADANIE GŁÓWNEGO OKNA
         BorderPane borderPane = new BorderPane();
-        borderPane.setTop(topContainer);  
+        borderPane.setTop(menuBar);  // Wpinamy samo menuBar bezpośrednio na górę okna
         borderPane.setCenter(workspace); 
         BorderPane.setMargin(workspace, new Insets(10));
         borderPane.setStyle("-fx-background-color: #F0F8FF;");
@@ -117,6 +98,7 @@ public class Main extends Application {
         primaryStage.centerOnScreen();
         primaryStage.show();
     }
+
     // Wyświetlanie okienka dialogowego po naciśnięciu guzika Info
     private void showInfoDialog() {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
@@ -124,6 +106,26 @@ public class Main extends Application {
         alert.setHeaderText("Geometrical Figure Editor");
         alert.setContentText("Przeznaczenie: Rysowanie i edycja figur geometrycznych.\nAutor: Artiom Borokhov");
         alert.getDialogPane().setMinHeight(javafx.scene.layout.Region.USE_PREF_SIZE);
+        alert.showAndWait();
+    }
+
+    // Wyświetlanie okienka dialogowego po naciśnięciu instrukcji
+    private void showHelpDialog() {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Instrukcja użytkownika");
+        alert.setHeaderText("Jak korzystać z Edytora Graficznego");
+        
+        String instrukcja = "1. RYSOWANIE: Wybierz figurę z menu 'Figury'. Kliknij lewym przyciskiem myszy (LPM) na płótnie i przeciągnij, aby narysować kształt.\n\n"
+                          + "2. PRZESUWANIE: Kliknij narysowaną figurę (LPM), aby ją zaznaczyć (pojawi się czerwona ramka). Z wciśniętym LPM możesz ją przesuwać.\n\n"
+                          + "3. SKALOWANIE: Najedź kursorem na figurę i użyj rolki myszy (Scroll), aby ją powiększyć lub pomniejszyć.\n\n"
+                          + "4. OBRACANIE: Przytrzymaj klawisz CTRL i użyj rolki myszy, aby obrócić figurę.\n\n"
+                          + "5. KOLORY: Kliknij figurę prawym przyciskiem myszy (PPM), aby otworzyć menu zmiany koloru.\n\n"
+                          + "6. ZAPIS/ODCZYT: Użyj menu 'Plik', aby zapisać swoje dzieło do pliku *.edy lub wczytać poprzedni projekt.";
+                          
+        alert.setContentText(instrukcja);
+        alert.getDialogPane().setMinHeight(javafx.scene.layout.Region.USE_PREF_SIZE);
+        alert.getDialogPane().setMinWidth(400); 
+
         alert.showAndWait();
     }
 }

@@ -109,6 +109,7 @@ public class EditorController {
                 shape.setScaleY(data.scaleY);
                 shape.setRotate(data.rotate);
                 shape.setFill(Color.valueOf(data.hexColor));
+                shape.setStroke(Color.BLACK); 
 
                 makeShapeInteractive(shape); 
                 workspace.getChildren().add(shape);
@@ -136,7 +137,8 @@ public class EditorController {
     // Rejestruje wskazaną figurę jako aktywną i nakłada na nią wizualne obramowanie.
     private void setActiveShape(Shape shape) {
         if (activeShape != null) {
-            activeShape.setStroke(null);
+            activeShape.setStroke(Color.BLACK); 
+            activeShape.setStrokeWidth(1);
         }
 
         activeShape = shape;
@@ -209,19 +211,22 @@ public class EditorController {
 
             if (currentTool == Tool.RECTANGLE) {
                 Rectangle rect = new Rectangle(startX, startY, 0, 0);
-                rect.setFill(Color.CORNFLOWERBLUE);
+                rect.setFill(Color.WHITE);
+                rect.setStroke(Color.BLACK);        
                 currentShape = rect;
                 makeShapeInteractive(rect);
                 workspace.getChildren().add(rect);
             } else if (currentTool == Tool.CIRCLE) {
                 Circle circle = new Circle(startX, startY, 0);
-                circle.setFill(Color.TOMATO); 
+                circle.setFill(Color.WHITE); 
+                circle.setStroke(Color.BLACK);
                 currentShape = circle;
                 makeShapeInteractive(circle);
                 workspace.getChildren().add(circle);
             } else if (currentTool == Tool.POLYGON) {
                 Polygon polygon = new Polygon();
-                polygon.setFill(Color.MEDIUMSEAGREEN);
+                polygon.setFill(Color.WHITE);
+                polygon.setStroke(Color.BLACK);
                 currentShape = polygon;
                 makeShapeInteractive(polygon);
                 workspace.getChildren().add(polygon);
