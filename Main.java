@@ -7,13 +7,33 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane; 
 import javafx.stage.Stage;
 
+/**
+ * Główna klasa aplikacji (punkt wejścia) oparta na architekturze JavaFX.
+ * Odpowiada za inicjalizację interfejsu graficznego (GUI), paska menu 
+ * oraz połączenie widoku z kontrolerem logiki ({@link EditorController}).
+ */
 public class Main extends Application {
+    
+    /** Obszar roboczy, na którym renderowane są figury geometryczne. */
+    private Pane workspace;
+
+    /**
+     * Standardowa metoda rozruchowa aplikacji JavaFX.
+     * 
+     * @param args Argumenty wiersza poleceń.
+     */
     public static void main(String[] args) {
         launch(args);
     }
 
-    private Pane workspace;
-
+    /**
+     * Metoda inicjalizująca i budująca główne okno programu.
+     * Konfiguruje układ wizualny (BorderPane), maskę przycinającą płótno,
+     * system menu oraz obsługę systemowych okien wyboru plików (zapis/odczyt).
+     * 
+     * @param primaryStage Główne okno aplikacji dostarczane przez platformę JavaFX.
+     * @throws Exception W przypadku błędu podczas inicjalizacji widoku.
+     */
     @Override
     public void start(Stage primaryStage) throws Exception {
         
@@ -33,7 +53,7 @@ public class Main extends Application {
 
         Menu menuPomoc = new Menu("Pomoc");
         MenuItem itemInstrukcja = new MenuItem("Instrukcja użytkownika");
-        MenuItem itemInfo = new MenuItem("Informacje o programie"); // Dodany przycisk Info
+        MenuItem itemInfo = new MenuItem("Informacje o programie"); 
         menuPomoc.getItems().addAll(itemInstrukcja, itemInfo);
 
         // Podpięcie akcji do menu Pomoc
@@ -87,7 +107,7 @@ public class Main extends Application {
 
         // 5. SKŁADANIE GŁÓWNEGO OKNA
         BorderPane borderPane = new BorderPane();
-        borderPane.setTop(menuBar);  // Wpinamy samo menuBar bezpośrednio na górę okna
+        borderPane.setTop(menuBar);  
         borderPane.setCenter(workspace); 
         BorderPane.setMargin(workspace, new Insets(10));
         borderPane.setStyle("-fx-background-color: #F0F8FF;");
@@ -99,7 +119,9 @@ public class Main extends Application {
         primaryStage.show();
     }
 
-    // Wyświetlanie okienka dialogowego po naciśnięciu guzika Info
+    /**
+     * Wyświetla informacyjne okno dialogowe z danymi o programie oraz autorze.
+     */
     private void showInfoDialog() {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Informacje o programie");
@@ -109,7 +131,9 @@ public class Main extends Application {
         alert.showAndWait();
     }
 
-    // Wyświetlanie okienka dialogowego po naciśnięciu instrukcji
+    /**
+     * Wyświetla okno dialogowe z instrukcją obsługi edytora dla użytkownika końcowego.
+     */
     private void showHelpDialog() {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Instrukcja użytkownika");

@@ -12,35 +12,48 @@ import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
 
-//  Kontroler odpowiadający za logikę rysowania, modyfikacji i zarządzania figurami na obszarze roboczym.
+/**
+ * Kontroler odpowiadający za logikę rysowania, modyfikacji i zarządzania figurami na obszarze roboczym.
+ */
 public class EditorController {
 
-    // Komponenty interfejsu
+    /** Komponenty interfejsu graficznego. */
     private Pane workspace;
     private ContextMenu contextMenu;
     private ColorPicker colorPicker;
 
-    // Narzędzia i stan edytora
+    /** Dostępne narzędzia rysowania. */
     public enum Tool { CIRCLE, RECTANGLE, POLYGON }
-    private Tool currentTool = Tool.RECTANGLE;
     
-    // Zmienne pomocnicze do rysowania i transformacji
-    private double startX, startY;
-    private double dragDeltaX, dragDeltaY;
+    /** Aktualnie wybrane narzędzie oraz stan edytora (aktywna/rysowana figura). */
+    private Tool currentTool = Tool.RECTANGLE;
     private Shape currentShape;
     private Shape activeShape = null;
+    
+    /** Zmienne pomocnicze przechowujące współrzędne myszy podczas rysowania i przesuwania. */
+    private double startX, startY, dragDeltaX, dragDeltaY;
 
+    /**
+     * Inicjalizuje kontroler i podpina zdarzenia myszy do obszaru roboczego.
+     * 
+     * @param workspace Płótno, na którym będą rysowane figury.
+     */
     public EditorController(Pane workspace) {
         this.workspace = workspace;
         setupMouseEvents();
         setupContextMenu();
     }
 
+    /** Zmienia aktywne narzędzie do rysowania. */
     public void setTool(Tool tool) {
         this.currentTool = tool;
     }
 
-    // Zapis danych - Konwertuje obiekty JavaFX na płótnie do formatu DTO (Data Transfer Object) w celu umożliwienia ich serializacji.
+    /**
+     * Konwertuje obiekty JavaFX na płótnie do formatu DTO w celu ich serializacji i zapisu.
+     * 
+     * @return Lista suchych danych reprezentujących obecny stan płótna.
+     */
     public List<ShapeData> getShapesAsData() {
         List<ShapeData> list = new ArrayList<>();
         
@@ -49,7 +62,6 @@ public class EditorController {
                 Shape shape = (Shape) node;
                 ShapeData data = new ShapeData();
                 
-                // Zapis transformacji i właściwości bazowych
                 data.translateX = shape.getTranslateX();
                 data.translateY = shape.getTranslateY();
                 data.scaleX = shape.getScaleX();
@@ -57,7 +69,6 @@ public class EditorController {
                 data.rotate = shape.getRotate();
                 data.hexColor = ((Color) shape.getFill()).toString();
 
-                // Zapis właściwości specyficznych dla danego typu figury
                 if (shape instanceof Rectangle) {
                     data.type = ShapeData.ShapeType.RECTANGLE;
                     Rectangle r = (Rectangle) shape;
@@ -82,7 +93,11 @@ public class EditorController {
         return list;
     }
 
-    // Odczyt danych - Czyści obecne płótno i odtwarza figury na podstawie wczytanych danych DTO.
+    /**
+     * Czyści obecne płótno i odtwarza figury na podstawie wczytanych danych DTO.
+     * 
+     * @param dataList Lista danych figur wczytana z pliku.
+     */
     public void loadShapesFromData(List<ShapeData> dataList) {
         workspace.getChildren().clear(); 
         setActiveShape(null);
@@ -90,7 +105,6 @@ public class EditorController {
         for (ShapeData data : dataList) {
             Shape shape = null;
             
-            // Rekonstrukcja geometrii
             if (data.type == ShapeData.ShapeType.RECTANGLE) {
                 shape = new Rectangle(data.x, data.y, data.width, data.height);
             } else if (data.type == ShapeData.ShapeType.CIRCLE) {
@@ -102,7 +116,6 @@ public class EditorController {
             }
             
             if (shape != null) {
-                // Aplikacja zapisanych transformacji i kolorów
                 shape.setTranslateX(data.translateX);
                 shape.setTranslateY(data.translateY);
                 shape.setScaleX(data.scaleX);
@@ -117,12 +130,11 @@ public class EditorController {
         }
     }
 
-    // Konfiguruje menu kontekstowe oraz narzędzie ColorPicker dla aktywnych figur.
+    /** Konfiguruje menu kontekstowe oraz narzędzie wyboru koloru. */
     private void setupContextMenu() {
         contextMenu = new ContextMenu();
         colorPicker = new ColorPicker();
 
-        // Akcja zmiany koloru dla aktywnej figury
         colorPicker.setOnAction(event -> {
             if (activeShape != null) {
                 activeShape.setFill(colorPicker.getValue());
@@ -134,7 +146,7 @@ public class EditorController {
         contextMenu.getItems().add(colorItem);
     }
 
-    // Rejestruje wskazaną figurę jako aktywną i nakłada na nią wizualne obramowanie.
+    /** Ustawia figurę jako aktywną, nakładając na nią wyróżniające obramowanie. */
     private void setActiveShape(Shape shape) {
         if (activeShape != null) {
             activeShape.setStroke(Color.BLACK); 
@@ -150,34 +162,29 @@ public class EditorController {
         }
     }
 
-    // Dodaje event listnery umożliwiające aktywowanie, przesuwanie, skalowanie, obracanie figury oraz pozwala na wywołanie menu kontekstowego
+    /** Dodaje nasłuchiwacze umożliwiające selekcję, transformację i wywoływanie menu dla konkretnej figury. */
     private void makeShapeInteractive(Shape shape) {
         shape.setOnMousePressed(event -> {
             setActiveShape(shape);
             event.consume();
 
             if (event.getButton() == MouseButton.SECONDARY) {
-                // Wywołanie menu kontekstowego
                 colorPicker.setValue((Color) shape.getFill());
                 contextMenu.show(shape, event.getScreenX(), event.getScreenY());
             } else if (event.getButton() == MouseButton.PRIMARY) {
-                // Rozpoczęcie przesuwania figury
                 contextMenu.hide();
                 dragDeltaX = shape.getTranslateX() - event.getSceneX();
                 dragDeltaY = shape.getTranslateY() - event.getSceneY();
             }
         });
 
-        // Obsługa przesuwania figury
         shape.setOnMouseDragged(event -> {
             if (!event.isPrimaryButtonDown()) return;
-
             shape.setTranslateX(event.getSceneX() + dragDeltaX);
             shape.setTranslateY(event.getSceneY() + dragDeltaY);
             event.consume();
         });
 
-        // Obsługa skalowania (Scroll) i obracania (Ctrl + Scroll)
         shape.setOnScroll(event -> {
             if (activeShape != shape) return;
 
@@ -200,9 +207,8 @@ public class EditorController {
         });
     }
 
-    // Konfiguruje główne listenery obszaru roboczego, odpowiadające za inicjowanie i rysowanie figur
+    /** Konfiguruje nasłuchiwacze płótna odpowiadające za rysowanie nowych figur. */
     private void setupMouseEvents() {
-        // Zdarzenie kliknięcia - punkt początkowy rysowania
         workspace.setOnMousePressed(event -> {
             if (event.getButton() != MouseButton.PRIMARY) return;
 
@@ -233,7 +239,6 @@ public class EditorController {
             }
         });
 
-        // Zdarzenie przeciągania - dynamiczne dopasowywanie wymiarów figury
         workspace.setOnMouseDragged(event -> {
             if (!event.isPrimaryButtonDown()) return;
 
@@ -242,19 +247,16 @@ public class EditorController {
 
             if (currentTool == Tool.RECTANGLE && currentShape instanceof Rectangle) {
                 Rectangle rect = (Rectangle) currentShape;
-                // Matematyczne zabezpieczenie przed ujemnymi wymiarami
                 rect.setX(Math.min(startX, currentX));
                 rect.setY(Math.min(startY, currentY));
                 rect.setWidth(Math.abs(currentX - startX));
                 rect.setHeight(Math.abs(currentY - startY));
             } else if (currentTool == Tool.CIRCLE && currentShape instanceof Circle) {
                 Circle circle = (Circle) currentShape;
-                // Obliczanie promienia na podstawie twierdzenia Pitagorasa
                 double radius = Math.sqrt(Math.pow(currentX - startX, 2) + Math.pow(currentY - startY, 2));
                 circle.setRadius(radius);
             } else if (currentTool == Tool.POLYGON && currentShape instanceof Polygon) {
                 Polygon polygon = (Polygon) currentShape;
-                // Generowanie trójkąta na podstawie wirtualnej obwiedni (bounding box)
                 double minX = Math.min(startX, currentX);
                 double maxX = Math.max(startX, currentX);
                 double minY = Math.min(startY, currentY);

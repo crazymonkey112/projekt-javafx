@@ -1,30 +1,30 @@
 import java.io.Serializable;
 import java.util.List;
 
+/**
+ * Klasa transferowa (DTO) przechowująca surowe dane figur do zapisu w pliku.
+ */
 public class ShapeData implements Serializable {
-    // Unikalny identyfikator wersji
+    
+    /** Unikalny indentyfikator */
     private static final long serialVersionUID = 1L;
 
     public enum ShapeType { RECTANGLE, CIRCLE, POLYGON }
     
     public ShapeType type;
     
-    // Wspólne właściwości transformacji
-    public double translateX;
-    public double translateY;
-    public double scaleX;
-    public double scaleY;
-    public double rotate;
+    /** Wspólne parametry transformacji */
+    public double translateX, translateY, scaleX, scaleY, rotate;
     
-    // Kolor zapisujemy jako zwykły tekst, bo klasa Color nie jest serializowalna
+    /** Kolor w formacie HEX (bo klasa Color nie jest serializowalna). */
     public String hexColor;
 
-    // Zmienne dla Prostokąta
+    /** Zmienne dla Prostokąta. */
     public double x, y, width, height;
 
-    // Zmienne dla Okręgu
+    /** Zmienne dla Okręgu. */
     public double centerX, centerY, radius;
 
-    // Zmienne dla Wielokąta
+    /** Płaska lista współrzędnych [x, y] wierzchołków Wielokąta. */
     public List<Double> points;
 }
