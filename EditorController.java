@@ -12,6 +12,60 @@ public class EditorController {
     private Tool currentTool = Tool.RECTANGLE;
     private double startX, startY;
     private Shape currentShape;
+    private Shape activeShape = null;
+    private double dragDeltaX, dragDeltaY;
+
+    private void setActiveShape(Shape shape) {
+        if (activeShape != null) {
+            activeShape.setStroke(null);
+        }
+
+        activeShape = shape;
+
+        if (activeShape != null) {
+            activeShape.setStroke(Color.RED);
+            activeShape.setStrokeWidth(2);
+            activeShape.toFront();
+        }
+    }
+
+    private void makeShapeInteractive(Shape shape) {
+        shape.setOnMousePressed(event -> {
+            setActiveShape(shape);
+            dragDeltaX = shape.getTranslateX() - event.getSceneX();
+            dragDeltaY = shape.getTranslateY() - event.getSceneY();
+            event.consume();
+        });
+
+        shape.setOnMouseDragged(event -> {
+            shape.setTranslateX(event.getSceneX() + dragDeltaX);
+            shape.setTranslateY(event.getSceneY() + dragDeltaY);
+            event.consume();
+        });
+        shape.setOnScroll(event -> {
+            if (activeShape != shape) return;
+
+            double delta = event.getDeltaY();
+
+            if (delta == 0.0) return;
+
+            if (event.isControlDown()) {
+                double currentAngle = shape.getRotate();
+                double angleDelta = (delta > 0) ? 10 : -10;
+                shape.setRotate(currentAngle + angleDelta);
+                
+            } else {
+                double currentScaleX = shape.getScaleX();
+                double currentScaleY = shape.getScaleY();
+                double scaleFactor = (delta > 0) ? 1.1 : 0.9;
+                
+                shape.setScaleX(currentScaleX * scaleFactor);
+                shape.setScaleY(currentScaleY * scaleFactor);
+            }
+
+            event.consume();
+        });
+    }
 
     public EditorController(Pane workspace) {
         this.workspace = workspace;
@@ -32,18 +86,21 @@ public class EditorController {
                 Rectangle rect = new Rectangle(startX, startY, 0, 0);
                 rect.setFill(Color.CORNFLOWERBLUE);
                 currentShape = rect;
+                makeShapeInteractive(rect);
                 workspace.getChildren().add(rect);
                 
             } else if (currentTool == Tool.CIRCLE) {
                 Circle circle = new Circle(startX, startY, 0);
                 circle.setFill(Color.TOMATO); 
                 currentShape = circle;
+                makeShapeInteractive(circle);
                 workspace.getChildren().add(circle);
                 
             } else if (currentTool == Tool.POLYGON) {
                 Polygon polygon = new Polygon();
                 polygon.setFill(Color.MEDIUMSEAGREEN);
                 currentShape = polygon;
+                makeShapeInteractive(polygon);
                 workspace.getChildren().add(polygon);
             }
         });
