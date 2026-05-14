@@ -76,7 +76,29 @@ public class Main extends Application {
         // Podpinamy akcje pod menu figur
         itemOkrag.setOnAction(e -> controller.setTool(EditorController.Tool.CIRCLE));
         itemProstokat.setOnAction(e -> controller.setTool(EditorController.Tool.RECTANGLE));
-        itemWielokat.setOnAction(e -> controller.setTool(EditorController.Tool.POLYGON));
+        itemWielokat.setOnAction(e -> {
+            TextInputDialog dialog = new TextInputDialog("5"); // Domyślna wartość w okienku to 5
+            dialog.setTitle("Narzędzie Wielokąt");
+            dialog.setHeaderText("Rysowanie wielokąta foremnego");
+            dialog.setContentText("Podaj ilość kątów (np. 3, 5, 6, 8):");
+
+            // Pokazujemy okienko i czekamy na odpowiedź
+            dialog.showAndWait().ifPresent(result -> {
+                try {
+                    int sides = Integer.parseInt(result);
+                    if (sides >= 3) {
+                        controller.setPolygonSides(sides);
+                        controller.setTool(EditorController.Tool.POLYGON);
+                    } else {
+                        // Jeśli ktoś poda 1 lub 2, wymuszamy trójkąt
+                        controller.setPolygonSides(3);
+                        controller.setTool(EditorController.Tool.POLYGON);
+                    }
+                } catch (NumberFormatException ex) {
+                    // Jeśli użytkownik wpisze litery zamiast cyfr, ignorujemy
+                }
+            });
+        });
 
         // 4. OBSŁUGA ZAPISU I ODCZYTU (FileChooser)
         javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
@@ -139,11 +161,11 @@ public class Main extends Application {
         alert.setTitle("Instrukcja użytkownika");
         alert.setHeaderText("Jak korzystać z Edytora Graficznego");
         
-        String instrukcja = "1. RYSOWANIE: Wybierz figurę z menu 'Figury'. Kliknij lewym przyciskiem myszy (LPM) na płótnie i przeciągnij, aby narysować kształt.\n\n"
-                          + "2. PRZESUWANIE: Kliknij narysowaną figurę (LPM), aby ją zaznaczyć (pojawi się czerwona ramka). Z wciśniętym LPM możesz ją przesuwać.\n\n"
+        String instrukcja = "1. RYSOWANIE: Wybierz figurę z menu 'Figury'. Kliknij lewym przyciskiem myszy na płótnie i przeciągnij, aby narysować kształt.\n\n"
+                          + "2. PRZESUWANIE: Kliknij narysowaną figurę, aby ją zaznaczyć (pojawi się czerwona ramka). Przytrzymaj lewy przycisk myszy aby ją przesunąć.\n\n"
                           + "3. SKALOWANIE: Najedź kursorem na figurę i użyj rolki myszy (Scroll), aby ją powiększyć lub pomniejszyć.\n\n"
                           + "4. OBRACANIE: Przytrzymaj klawisz CTRL i użyj rolki myszy, aby obrócić figurę.\n\n"
-                          + "5. KOLORY: Kliknij figurę prawym przyciskiem myszy (PPM), aby otworzyć menu zmiany koloru.\n\n"
+                          + "5. KOLORY: Kliknij figurę prawym przyciskiem myszy, aby otworzyć menu zmiany koloru.\n\n"
                           + "6. ZAPIS/ODCZYT: Użyj menu 'Plik', aby zapisać swoje dzieło do pliku *.edy lub wczytać poprzedni projekt.";
                           
         alert.setContentText(instrukcja);

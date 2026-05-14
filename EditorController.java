@@ -32,6 +32,7 @@ public class EditorController {
     
     /** Zmienne pomocnicze przechowujące współrzędne myszy podczas rysowania i przesuwania. */
     private double startX, startY, dragDeltaX, dragDeltaY;
+    private int polygonSides = 3; // Domyślnie trójkąt
 
     /**
      * Inicjalizuje kontroler i podpina zdarzenia myszy do obszaru roboczego.
@@ -47,6 +48,10 @@ public class EditorController {
     /** Zmienia aktywne narzędzie do rysowania. */
     public void setTool(Tool tool) {
         this.currentTool = tool;
+    }
+
+    public void setPolygonSides(int sides) {
+        this.polygonSides = sides;
     }
 
     /**
@@ -257,17 +262,22 @@ public class EditorController {
                 circle.setRadius(radius);
             } else if (currentTool == Tool.POLYGON && currentShape instanceof Polygon) {
                 Polygon polygon = (Polygon) currentShape;
-                double minX = Math.min(startX, currentX);
-                double maxX = Math.max(startX, currentX);
-                double minY = Math.min(startY, currentY);
-                double maxY = Math.max(startY, currentY);
+                
+                // 1. Promień okręgu opisanego na wielokącie (odległość kliknięcia od kursora)
+                double radius = Math.sqrt(Math.pow(currentX - startX, 2) + Math.pow(currentY - startY, 2));
 
                 polygon.getPoints().clear();
-                polygon.getPoints().addAll(
-                    (minX + maxX) / 2, minY, 
-                    minX, maxY,           
-                    maxX, maxY               
-                );
+                
+                // 2. Wyliczanie wierzchołków wielokąta foremnego
+                for (int i = 0; i < polygonSides; i++) {
+                    // Kąt dla kolejnego wierzchołka (-Math.PI / 2 sprawia, że figura "celuje" czubkiem do góry)
+                    double angle = i * (2 * Math.PI / polygonSides) - Math.PI / 2;
+                    
+                    polygon.getPoints().addAll(
+                        startX + radius * Math.cos(angle),
+                        startY + radius * Math.sin(angle)
+                    );
+                }
             }
         });
     }
